@@ -57,6 +57,29 @@ class CreateAlbumViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             raise permissions.PermissionDenied("You are not registered as an artist.")
         serializer.save(artist=artist)
 
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[IsAdminUser],
+        url_path="approve",
+        url_name="album-approve",
+    )
+    def approve(self, request, pk=None):
+        """
+        Approve an album (admin only).
+        POST /albums/manage/{id}/approve/
+        """
+        album = self.get_object()
+        if album.isApproved:
+            return Response(
+                {"detail": "Album is already approved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        album.isApproved = True
+        album.save(update_fields=["isApproved"])
+        serializer = self.get_serializer(album)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class AlbumDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
